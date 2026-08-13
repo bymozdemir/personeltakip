@@ -1,10 +1,6 @@
     let personeller = JSON.parse(localStorage.getItem('personeller')) || [];
     let sablon = JSON.parse(localStorage.getItem('sablon')) || {};
 
-    if (Object.keys(sablon).length === 0) {
-      sablon = {};
-    }
-
     let seciliPersonelIds = new Set();
     let aktifPersonelId = null;
     let aktifAnaKategori = null;
@@ -79,7 +75,7 @@
       if (viewForm) {
         document.getElementById('viewForm').style.display = 'none';
         document.getElementById('viewCategories').style.display = 'block';
-        let p = personeller.find(x => x.id === aktifPersonelId);
+        let p = personeller.find(x => String(x.id) === String(aktifPersonelId));
         document.getElementById('headerTitle').innerText = p ? p.adSoyad : "Personel Detay";
         document.getElementById('btnLeft').innerText = "‹ Geri";
         sessionStorage.setItem('appState', JSON.stringify({ ekran: 'categories', personelId: aktifPersonelId }));
@@ -119,7 +115,6 @@
         let dosyaIcerigi = e.target.result;
         try {
           let parsedData = JSON.parse(dosyaIcerigi);
-          
           let yuklenecekPersoneller = null;
 
           if (Array.isArray(parsedData)) {
@@ -142,7 +137,7 @@
           let atlananSayisi = 0;
 
           yuklenecekPersoneller.forEach(yedekKisi => {
-            let zatenVarMi = personeller.some(p => p.id === yedekKisi.id || (p.adSoyad && yedekKisi.adSoyad && p.adSoyad.toLowerCase() === yedekKisi.adSoyad.toLowerCase()));
+            let zatenVarMi = personeller.some(p => String(p.id) === String(yedekKisi.id) || (p.adSoyad && yedekKisi.adSoyad && p.adSoyad.toLowerCase() === yedekKisi.adSoyad.toLowerCase()));
 
             if (!zatenVarMi) {
               personeller.push(yedekKisi);
@@ -178,7 +173,7 @@
       if (viewForm) {
         document.getElementById('viewForm').style.display = 'none';
         document.getElementById('viewCategories').style.display = 'block';
-        let p = personeller.find(x => x.id === aktifPersonelId);
+        let p = personeller.find(x => String(x.id) === String(aktifPersonelId));
         document.getElementById('headerTitle').innerText = p ? p.adSoyad : "Personel Detay";
         document.getElementById('btnLeft').innerText = "‹ Geri";
         sessionStorage.setItem('appState', JSON.stringify({ ekran: 'categories', personelId: aktifPersonelId }));
@@ -215,7 +210,7 @@
       document.getElementById('viewCategories').style.display = 'block';
       document.getElementById('viewForm').style.display = 'none';
 
-      let p = personeller.find(x => x.id === aktifPersonelId);
+      let p = personeller.find(x => String(x.id) === String(aktifPersonelId));
       document.getElementById('headerTitle').innerText = p ? p.adSoyad : "Personel Detay";
       let btnLeft = document.getElementById('btnLeft');
       btnLeft.innerText = "‹ Geri";
@@ -331,15 +326,17 @@
       filtrelenmis.forEach(p => {
         let li = document.createElement('li');
         li.className = "personel-item";
-        let isChecked = seciliPersonelIds.has(p.id) ? "checked" : "";
+        
+        let strId = String(p.id);
+        let isChecked = seciliPersonelIds.has(strId) ? "checked" : "";
 
         li.innerHTML = `
-          <input type="checkbox" ${isChecked} onclick="event.stopPropagation(); personelSecimToggle(${p.id}, this)">
+          <input type="checkbox" ${isChecked} onclick="event.stopPropagation(); personelSecimToggle('${strId}', this)">
           <span class="personel-name">${p.adSoyad}</span>
           <span class="arrow">&gt;</span>
         `;
 
-        li.onclick = () => personelDetayAc(p.id);
+        li.onclick = () => personelDetayAc(strId);
         ul.appendChild(li);
       });
 
@@ -348,8 +345,8 @@
     }
 
     function personelDetayAc(id, isRestore = false) {
-      aktifPersonelId = id;
-      let p = personeller.find(x => x.id === id);
+      aktifPersonelId = String(id);
+      let p = personeller.find(x => String(x.id) === aktifPersonelId);
       if(!p) return;
 
       let container = document.getElementById('kategoriListesi');
@@ -404,7 +401,7 @@
       btnLeft.innerText = "‹ Geri";
 
       let alanlar = (sablon[k1] && sablon[k1][k2]) ? sablon[k1][k2] : [];
-      let p = personeller.find(x => x.id === aktifPersonelId);
+      let p = personeller.find(x => String(x.id) === String(aktifPersonelId));
       let mainKey = `${k1}_${k2}`;
       let kayitliVeri = (p && p.veriler && p.veriler[mainKey] && p.veriler[mainKey][0]) ? p.veriler[mainKey][0] : {};
 
@@ -421,7 +418,6 @@
       } else {
         alanlar.forEach(alan => {
           let val = kayitliVeri[alan] || "";
-          
           let placeholderText = "";
           let alanKucuk = alan.toLowerCase();
           
@@ -431,8 +427,6 @@
             placeholderText = "örn. 15.08.1990";
           } else if (alanKucuk.includes('tc') || alanKucuk.includes('kimlik')) {
             placeholderText = "örn. 12345678901";
-          } else {
-            placeholderText = "";
           }
 
           let group = document.createElement('div');
@@ -451,7 +445,7 @@
     }
 
     function verileriKaydet() {
-      let p = personeller.find(x => x.id === aktifPersonelId);
+      let p = personeller.find(x => String(x.id) === String(aktifPersonelId));
       if (!p) return;
 
       if (!p.veriler) p.veriler = {};
@@ -484,17 +478,18 @@
     }
 
     function personelSecimToggle(id, checkbox) {
+      let strId = String(id);
       if (checkbox.checked) {
-        seciliPersonelIds.add(id);
+        seciliPersonelIds.add(strId);
       } else {
-        seciliPersonelIds.delete(id);
+        seciliPersonelIds.delete(strId);
       }
       seciliSayisiniGuncelle();
     }
 
     function hepsiniSecToggle(checkbox) {
       if (checkbox.checked) {
-        personeller.forEach(p => seciliPersonelIds.add(p.id));
+        personeller.forEach(p => seciliPersonelIds.add(String(p.id)));
       } else {
         seciliPersonelIds.clear();
       }
@@ -516,24 +511,40 @@
       modal.innerHTML = `
         <div style="background:white; width:85%; max-width:340px; padding:20px; border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.25);">
           <h3 style="margin-top:0; color:#1e88e5;">➕ Yeni Personel</h3>
-          <input id="yeniPersonelInput" type="text" placeholder="Adı Soyadı" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:14px; margin-top:8px;">
+          <input id="yeniPersonelInput" type="text" placeholder="Adı Soyadı" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:14px; margin-top:8px; box-sizing: border-box;">
+         <input id="yeniSicilInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="6 Haneli Sicil No (ID)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:14px; margin-top:10px; box-sizing: border-box;">
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-            <button id="iptalBtn" style="background:#999; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:bold;">İptal</button>
-            <button id="kaydetBtn" style="background:#00897b; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:bold;">Kaydet</button>
+            <button id="iptalBtn" style="background:#999; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">İptal</button>
+            <button id="kaydetBtn" style="background:#00897b; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">Kaydet</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
 
-      const input = modal.querySelector('#yeniPersonelInput');
-      input.focus();
+      const isimInput = modal.querySelector('#yeniPersonelInput');
+      const sicilInput = modal.querySelector('#yeniSicilInput');
+      isimInput.focus();
 
       modal.querySelector('#iptalBtn').onclick = () => modal.remove();
       modal.querySelector('#kaydetBtn').onclick = () => {
-        const isim = input.value.trim();
-        if (!isim) { input.focus(); return; }
+        const isim = isimInput.value.trim();
+        const sicilNo = sicilInput.value.trim();
 
-        personeller.push({ id: Date.now(), adSoyad: isim, veriler: {} });
+        if (!isim) { isimInput.focus(); return; }
+        
+        if (!sicilNo || sicilNo.length < 3) {
+          özelBildirimGoster("Lütfen geçerli bir sicil numarası girin.");
+          sicilInput.focus();
+          return;
+        }
+
+        const cakisanPersonel = personeller.find(p => String(p.id) === sicilNo);
+        if (cakisanPersonel) {
+          özelBildirimGoster(`Bu sicil numarası zaten "${cakisanPersonel.adSoyad}" adına kayıtlı!`);
+          return;
+        }
+
+        personeller.push({ id: sicilNo, adSoyad: isim, veriler: {} });
         kaydetLocal();
         personelListesiniCiz();
         modal.remove();
@@ -546,7 +557,7 @@
         return özelBildirimGoster("Lütfen silinecek en az bir personel seçin!");
       }
       if (confirm(`${seciliPersonelIds.size} kişiyi silmek istediğinizden emin misiniz?`)) {
-        personeller = personeller.filter(p => !seciliPersonelIds.has(p.id));
+        personeller = personeller.filter(p => !seciliPersonelIds.has(String(p.id)));
         seciliPersonelIds.clear();
         kaydetLocal();
         personelListesiniCiz();
@@ -559,7 +570,7 @@
       }
 
       let seciliId = Array.from(seciliPersonelIds)[0];
-      let p = personeller.find(x => x.id === seciliId);
+      let p = personeller.find(x => String(x.id) === String(seciliId));
       let tel = "";
 
       if (p && p.veriler) {
@@ -579,14 +590,10 @@
       }
 
       let temizTel = tel.replace(/\D/g, '');
-
-      if (temizTel.startsWith('90') && temizTel.length === 12) {
-      } else if (temizTel.startsWith('0') && temizTel.length === 11) {
+      if (temizTel.startsWith('0') && temizTel.length === 11) {
         temizTel = '90' + temizTel.substring(1);
       } else if (temizTel.length === 10) {
         temizTel = '90' + temizTel;
-      } else {
-        return özelBildirimGoster('Telefon numarası geçersiz: ' + tel);
       }
 
       let mesaj = encodeURIComponent(`Merhaba ${p.adSoyad}, lütfen güncel canlı konumunuzu bu sohbet üzerinden paylaşabilir misiniz?`);
@@ -634,7 +641,6 @@
         let altKategorilerHtml = "";
         Object.keys(sablon[k1]).forEach(k2 => {
           let alanlar = sablon[k1][k2] || [];
-          
           let alanlarHtml = alanlar.map(alan => `
             <span style="display:inline-flex; align-items:center; background:#e0e0e0; padding:3px 8px; border-radius:6px; margin-right:4px; margin-bottom:4px; border:1px solid #ccc; font-size: 11px;">
               ${alan}
@@ -753,9 +759,8 @@
     }
 
     function alanSil(k1, k2, alanAd) {
-      if (confirm(`'${alanAd}' alanını silmek istediğinize emin misiniz? Bu alanın kullanıldığı tüm personel verileri silinir.`)) {
+      if (confirm(`'${alanAd}' alanını silmek istediğinize emin misiniz?`)) {
         sablon[k1][k2] = sablon[k1][k2].filter(a => a !== alanAd);
-        
         let mainKey = `${k1}_${k2}`;
         personeller.forEach(p => {
           if (p.veriler && p.veriler[mainKey]) {
@@ -766,7 +771,6 @@
             });
           }
         });
-
         kaydetLocal();
         sablonListesiniCiz();
       }
@@ -776,7 +780,6 @@
       let val = document.getElementById('yeniAnaKategoriInput').value.trim();
       if (!val) return özelBildirimGoster("Lütfen bir kategori adı yazın.");
       if (sablon[val]) return özelBildirimGoster("Bu kategori zaten var.");
-
       sablon[val] = {};
       document.getElementById('yeniAnaKategoriInput').value = "";
       kaydetLocal();
@@ -789,7 +792,6 @@
       if (!k1) return özelBildirimGoster("Önce bir ana kategori seçin veya ekleyin.");
       if (!val) return özelBildirimGoster("Lütfen alt kategori adı yazın.");
       if (sablon[k1][val]) return özelBildirimGoster("Bu alt kategori zaten var.");
-
       sablon[k1][val] = []; 
       document.getElementById('yeniAltKategoriInput').value = "";
       kaydetLocal();
@@ -823,12 +825,8 @@
       modal.querySelector('#alanKaydetBtn').onclick = () => {
         const alanAdi = input.value.trim();
         if (!alanAdi) { input.focus(); return; }
-
         if (!Array.isArray(sablon[k1][k2])) sablon[k1][k2] = [];
-        if (sablon[k1][k2].includes(alanAdi)) {
-          özelBildirimGoster("Bu alan zaten eklenmiş.");
-          return;
-        }
+        if (sablon[k1][k2].includes(alanAdi)) return özelBildirimGoster("Bu alan zaten eklenmiş.");
 
         sablon[k1][k2].push(alanAdi);
         kaydetLocal();
@@ -854,8 +852,7 @@
       }
     }
 
-    // MODERN YEDEK OLUŞTUR (WEB SHARE API DESTEKLİ)
-    async function yedekOlustur() {
+    function yedekOlustur() {
       try {
         let yedek = {
           personeller: personeller,
@@ -863,154 +860,103 @@
           tarih: new Date().toLocaleString("tr-TR"),
           uygulama: "Tim Bilgileri Mobil"
         };
-
         let json = JSON.stringify(yedek, null, 2);
-        let dosyaAdi = "tim_bilgileri_yedek.json";
-        let dosya = new File([json], dosyaAdi, { type: "application/json" });
-
-        if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
-          try {
-            await navigator.share({
-              title: 'Tim Bilgileri Yedeği',
-              text: 'Personel verileri yedek dosyası ektedir.',
-              files: [dosya]
-            });
-          } catch (err) {
-            console.log("Paylaşım iptal edildi:", err);
-          }
-        } else {
-          let url = URL.createObjectURL(dosya);
-          let a = document.createElement("a");
-          a.href = url;
-          a.download = dosyaAdi;
-          document.body.appendChild(a);
-          a.click();
-
-          setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }, 1000);
-
-          özelBildirimGoster("Paylaşım menüsü desteklenmiyor, yedek dosyası cihaza indirildi.");
-        }
+        let blob = new Blob([json], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = "tim_bilgileri_yedek.txt";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+        özelBildirimGoster("Yedek dosyası indirildi.");
       } catch (e) {
         özelBildirimGoster("Yedek oluşturulurken hata oluştu: " + e.message);
       }
     }
 
-    // MODERN EXCEL DIŞA AKTAR (WEB SHARE API DESTEKLİ)
-    async function exportExcel() {
+    function exportExcel() {
       if (typeof XLSX === 'undefined') return özelBildirimGoster("Excel kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
       if (seciliPersonelIds.size === 0) return özelBildirimGoster("Dışa aktarmak için en az bir personel seçin!");
 
-      try {
-        let maxKayitSayilari = {};
-        Object.keys(sablon).forEach(k1 => {
-          Object.keys(sablon[k1]).forEach(k2 => {
-            let mainKey = `${k1}_${k2}`;
-            let maxCount = 1;
-
-            personeller.forEach(p => {
-              if (seciliPersonelIds.has(p.id) && p.veriler && p.veriler[mainKey]) {
-                if (p.veriler[mainKey].length > maxCount) maxCount = p.veriler[mainKey].length;
-              }
-            });
-            maxKayitSayilari[mainKey] = maxCount;
-          });
-        });
-
-        let sutunHaritasi = [
-          { header: 'ID', isStatic: true, key: 'id' },
-          { header: 'Adı Soyadı', isStatic: true, key: 'adSoyad' }
-        ];
-
-        Object.keys(sablon).forEach(k1 => {
-          Object.keys(sablon[k1]).forEach(k2 => {
-            let mainKey = `${k1}_${k2}`;
-            let alanlar = sablon[k1][k2] || [];
-            let tekrarSayisi = maxKayitSayilari[mainKey] || 1;
-
-            for (let i = 0; i < tekrarSayisi; i++) {
-              alanlar.forEach(alan => {
-                let baslikSuffix = tekrarSayisi > 1 ? ` ${i + 1}` : '';
-                sutunHaritasi.push({
-                  header: `${alan}${baslikSuffix} (${k2})`,
-                  mainKey: mainKey,
-                  index: i,
-                  alan: alan
-                });
-              });
+      let maxKayitSayilari = {};
+      Object.keys(sablon).forEach(k1 => {
+        Object.keys(sablon[k1]).forEach(k2 => {
+          let mainKey = `${k1}_${k2}`;
+          let maxCount = 1;
+          personeller.forEach(p => {
+            if (seciliPersonelIds.has(String(p.id)) && p.veriler && p.veriler[mainKey]) {
+              if (p.veriler[mainKey].length > maxCount) maxCount = p.veriler[mainKey].length;
             }
           });
+          maxKayitSayilari[mainKey] = maxCount;
         });
+      });
 
-        let excelMatris = [];
-        excelMatris.push(sutunHaritasi.map(s => s.header));
+      let sutunHaritasi = [
+        { header: 'Sicil No', isStatic: true, key: 'id' },
+        { header: 'Adı Soyadı', isStatic: true, key: 'adSoyad' }
+      ];
 
-        personeller.forEach(p => {
-          if (seciliPersonelIds.has(p.id)) {
-            let satir = [];
-            sutunHaritasi.forEach(s => {
-              if (s.isStatic) {
-                satir.push(p[s.key] !== undefined ? p[s.key] : '');
+      Object.keys(sablon).forEach(k1 => {
+        Object.keys(sablon[k1]).forEach(k2 => {
+          let mainKey = `${k1}_${k2}`;
+          let alanlar = sablon[k1][k2] || [];
+          let tekrarSayisi = maxKayitSayilari[mainKey] || 1;
+
+          for (let i = 0; i < tekrarSayisi; i++) {
+            alanlar.forEach(alan => {
+              let baslikSuffix = tekrarSayisi > 1 ? ` ${i + 1}` : '';
+              sutunHaritasi.push({ header: `${alan}${baslikSuffix} (${k1} > ${k2})`, mainKey: mainKey, index: i, alan: alan });
+            });
+          }
+        });
+      });
+
+      let excelMatris = [];
+      excelMatris.push(sutunHaritasi.map(s => s.header));
+
+      personeller.forEach(p => {
+        if (seciliPersonelIds.has(String(p.id))) {
+          let satir = [];
+          sutunHaritasi.forEach(s => {
+            if (s.isStatic) {
+              satir.push(p[s.key] !== undefined ? p[s.key] : '');
+            } else {
+              let kayitListesi = p.veriler ? p.veriler[s.mainKey] : null;
+              if (kayitListesi && kayitListesi[s.index] && kayitListesi[s.index][s.alan] !== undefined) {
+                satir.push(kayitListesi[s.index][s.alan]);
               } else {
-                let kayitListesi = p.veriler ? p.veriler[s.mainKey] : null;
-                if (kayitListesi && kayitListesi[s.index] && kayitListesi[s.index][s.alan] !== undefined) {
-                  satir.push(kayitListesi[s.index][s.alan]);
-                } else {
-                  satir.push('');
-                }
+                satir.push('');
               }
-            });
-            excelMatris.push(satir);
-          }
-        });
-
-        let ws = XLSX.utils.aoa_to_sheet(excelMatris);
-        let wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Personel Listesi");
-
-        let excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        let dosyaAdi = 'Personel_Detayli_Liste.xlsx';
-        let excelDosyasi = new File([excelBuffer], dosyaAdi, { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-
-        if (navigator.canShare && navigator.canShare({ files: [excelDosyasi] })) {
-          try {
-            await navigator.share({
-              title: 'Personel Listesi',
-              text: 'Güncel personel listesi Excel formatında ektedir.',
-              files: [excelDosyasi]
-            });
-          } catch (err) {
-            console.log("Excel paylaşımı iptal edildi:", err);
-          }
-        } else {
-          const url = URL.createObjectURL(excelDosyasi);
-          let a = document.createElement('a');
-          a.href = url;
-          a.download = dosyaAdi;
-          document.body.appendChild(a);
-          a.click();
-
-          setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }, 1000);
-
-          özelBildirimGoster('Paylaşım menüsü desteklenmiyor, Excel cihazınıza indirildi.');
+            }
+          });
+          excelMatris.push(satir);
         }
+      });
+
+      let ws = XLSX.utils.aoa_to_sheet(excelMatris);
+      let wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Personel Listesi");
+
+      try {
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = 'Personel_Detayli_Liste.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+        özelBildirimGoster('Excel dosyası indirildi.');
       } catch(e) {
         özelBildirimGoster('Dışa aktarma hatası: ' + e.message);
       }
     }
 
     function importExcel(event) {
-      if (typeof XLSX === 'undefined') {
-        return özelBildirimGoster("Excel kütüphanesi (XLSX) yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
-      }
-
+      if (typeof XLSX === 'undefined') return özelBildirimGoster("Excel kütüphanesi yüklenemedi.");
       let file = event.target.files[0];
       if (!file) return;
 
@@ -1030,7 +976,7 @@
           let guncellenenSayisi = 0;
 
           let adSoyadIndex = basliklar.findIndex(b => b && b.toString().trim().toLowerCase().includes('ad'));
-          let idIndex = basliklar.findIndex(b => b && b.toString().trim().toLowerCase() === 'id');
+          let idIndex = basliklar.findIndex(b => b && (['id', 'sicil no', 'personel kodu'].includes(b.toString().trim().toLowerCase())));
           if (adSoyadIndex === -1) adSoyadIndex = 1;
 
           basliklar.forEach((baslik, colIdx) => {
@@ -1038,28 +984,28 @@
             let match = baslik.toString().match(/(.*)\((.*)\)/);
             if (match) {
               let hamAlanAdi = match[1].trim();
-              let altKatAdi = match[2].trim();
+              let icerik = match[2].trim();
               let alanAdi = hamAlanAdi.replace(/\s+\d+$/, '').trim();
 
-              let bulunanAnaKat = null;
-              Object.keys(sablon).forEach(k1 => {
-                if (sablon[k1][altKatAdi]) bulunanAnaKat = k1;
-              });
+              let anaKat = null;
+              let altKat = null;
 
-              if (!bulunanAnaKat) {
-                if (!sablon['Genel Bilgiler']) {
-                  sablon['Genel Bilgiler'] = {};
+              if (icerik.includes('>')) {
+                let parcalar = icerik.split('>');
+                anaKat = parcalar[0].trim();
+                altKat = parcalar[1].trim();
+              } else {
+                altKat = icerik;
+                Object.keys(sablon).forEach(k1 => { if (sablon[k1][altKat]) anaKat = k1; });
+                if (!anaKat) {
+                  if (!sablon['Genel Bilgiler']) sablon['Genel Bilgiler'] = {};
+                  anaKat = 'Genel Bilgiler';
                 }
-                bulunanAnaKat = 'Genel Bilgiler';
               }
 
-              if (!sablon[bulunanAnaKat][altKatAdi]) {
-                sablon[bulunanAnaKat][altKatAdi] = [];
-              }
-
-              if (!sablon[bulunanAnaKat][altKatAdi].includes(alanAdi)) {
-                sablon[bulunanAnaKat][altKatAdi].push(alanAdi);
-              }
+              if (!sablon[anaKat]) sablon[anaKat] = {};
+              if (!sablon[anaKat][altKat]) sablon[anaKat][altKat] = [];
+              if (!sablon[anaKat][altKat].includes(alanAdi)) sablon[anaKat][altKat].push(alanAdi);
             }
           });
 
@@ -1070,12 +1016,12 @@
             let adSoyadVal = satir[adSoyadIndex] ? satir[adSoyadIndex].toString().trim() : '';
             if (!adSoyadVal) continue;
 
-            let excelId = (idIndex !== -1 && satir[idIndex]) ? Number(satir[idIndex]) : null;
+            let excelId = (idIndex !== -1 && satir[idIndex]) ? String(satir[idIndex]) : null;
             let mevcutPersonel = personeller.find(p => p.adSoyad.toLowerCase() === adSoyadVal.toLowerCase());
 
             if (!mevcutPersonel) {
-              let idCakismasiVarMi = excelId && personeller.some(p => p.id === excelId);
-              let atanacakId = (excelId && !idCakismasiVarMi) ? excelId : (Date.now() + i);
+              let idCakismasiVarMi = excelId && personeller.some(p => String(p.id) === excelId);
+              let atanacakId = (excelId && !idCakismasiVarMi) ? excelId : String(Date.now() + i);
 
               mevcutPersonel = { id: atanacakId, adSoyad: adSoyadVal, veriler: {} };
               personeller.push(mevcutPersonel);
@@ -1092,19 +1038,28 @@
               let match = baslik.toString().match(/(.*)\((.*)\)/);
               if (match) {
                 let hamAlanAdi = match[1].trim();
-                let altKatAdi = match[2].trim();
+                let icerik = match[2].trim();
                 let alanAdi = hamAlanAdi.replace(/\s+\d+$/, '').trim();
 
-                Object.keys(sablon).forEach(k1 => {
-                  if (sablon[k1][altKatAdi]) {
-                    let mainKey = `${k1}_${altKatAdi}`;
-                    if (!mevcutPersonel.veriler) mevcutPersonel.veriler = {};
-                    if (!mevcutPersonel.veriler[mainKey]) {
-                      mevcutPersonel.veriler[mainKey] = [{}];
-                    }
-                    mevcutPersonel.veriler[mainKey][0][alanAdi] = val;
-                  }
-                });
+                let anaKat = null;
+                let altKat = null;
+
+                if (icerik.includes('>')) {
+                  let parcalar = icerik.split('>');
+                  anaKat = parcalar[0].trim();
+                  altKat = parcalar[1].trim();
+                } else {
+                  altKat = icerik;
+                  Object.keys(sablon).forEach(k1 => { if (sablon[k1][altKat]) anaKat = k1; });
+                  if (!anaKat) anaKat = 'Genel Bilgiler';
+                }
+
+                if (sablon[anaKat] && sablon[anaKat][altKat]) {
+                  let mainKey = `${anaKat}_${altKat}`;
+                  if (!mevcutPersonel.veriler) mevcutPersonel.veriler = {};
+                  if (!mevcutPersonel.veriler[mainKey]) mevcutPersonel.veriler[mainKey] = [{}];
+                  mevcutPersonel.veriler[mainKey][0][alanAdi] = val;
+                }
               }
             });
           }
@@ -1113,7 +1068,7 @@
           personelListesiniCiz();
           ozelGunleriKontrolEtVeGoster();
           event.target.value = '';
-          özelBildirimGoster(`${eklenenSayisi} yeni personel eklendi, ${guncellenenSayisi} personel güncellendi.\nMenü ve şablonlar Excel başlıklarından otomatik yapılandırıldı.`);
+          özelBildirimGoster(`${eklenenSayisi} yeni personel eklendi, ${guncellenenSayisi} personel güncellendi.\nKategoriler Excel'den başarıyla geri yüklendi.`);
         } catch (err) {
           özelBildirimGoster("Excel işlenirken hata oluştu: " + err.message);
         }
